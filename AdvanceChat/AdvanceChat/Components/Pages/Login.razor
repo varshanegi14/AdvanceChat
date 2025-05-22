@@ -1,0 +1,103 @@
+﻿@page "/login"
+@using System.ComponentModel.DataAnnotations
+@using AdvanceChat.Data
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<AppUser> userManger
+@inject SignInManager<AppUser> signInManager
+@inject NavigationManager navigationManager
+@rendermode InteractiveWebAssembly
+
+<div style="display:flex; align-items: center; justify-content:center; height:100vh ">
+    <div class="shadow-sm" style="height: auto; width:400px; background-color:#edf1f5; border-radius:15px">
+        <div style=" margin:1.5rem auto 0px auto ">
+            <div class="container-fluid" style="display: flex; justify-content:center">
+                <a class="navbar-brand" href="#"
+                style="color:#193066; opacity:100%; font-weight: bold; font-size:1.65rem"><img
+                    src="/Assets/bluelogo.png" height="30px" width="24px" alt="Logo" loading="lazy"
+                    style="padding-right:5px; " />E-OREO</a>
+            </div>
+            <div style="display: flex; justify-content:center">
+                <p style="font-size: 9px; color: #757a7b; font-weight: bold;">Employee - Opportunity, Rewards,
+                    Engagement, Outcome</p>
+            </div>
+        </div>
+        <section style="margin:5px  50px  5px 50px">
+            <StatusMessage Message="@errorMessage" />
+            <EditForm Model="loginModel" method="post" OnValidSubmit="LoginAsync" FormName="login">
+                <DataAnnotationsValidator />
+                <div class="form-floating mb-3">
+                    <InputText @bind-Value="loginModel.Email" class="form-control" style="height: 3rem;"
+                    autocomplete="username" aria-required="true" placeholder="name@example.com" />
+                    <label for="email" class="form-label" style="padding: 0.75rem 0.5rem;">Email</label>
+                    <ValidationMessage For="() => loginModel.Email" class="text-danger" />
+                </div>
+                <div class="form-floating mb-3">
+                    <InputText type="password" @bind-Value="loginModel.Password" style="height: 3rem;" class="form-control"
+                    autocomplete="current-password" aria-required="true" placeholder="password" />
+                    <label for="password" class="form-label" style="padding: 0.75rem 0.5rem;">Password</label>
+                    <ValidationMessage For="() => loginModel.Password" class="text-danger" />
+                </div>
+                <div>
+                    <button type="submit" style="background-color: #193066;" class="w-100 btn btn-lg btn-primary">Log
+                        in</button>
+                </div>
+                  <div style="display:flex; justify-content:center; margin-top:20px">
+                    <p style="margin-bottom: 0px;">
+                        <a href="/register" style="text-decoration: none; color:blue"><span
+                                style="color: black;">Not a
+                                member? </span>Register</a>
+                    </p>
+                </div>
+              @*   <div class="mb-4" style="display:flex; justify-content:center; margin-top:10px">
+                    <p>
+                        <a href="Account/ForgotPassword" style="text-decoration: none; color:blue">Forgot your
+                            password?</a>
+                    </p>
+                </div> *@
+            </EditForm>
+        </section>
+    </div>
+</div>
+
+
+@code {
+
+    private string? errorMessage;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    string message = "";
+
+    [SupplyParameterFromForm]
+    private LoginModel loginModel { get; set; } = new();
+
+
+    async Task LoginAsync()
+    {
+        var findUser = await userManger.FindByEmailAsync(loginModel.Email);
+        if (findUser == null)
+        {
+            message = "sorry, user is not registered";
+            return;
+        }
+
+        var result = await signInManager.CheckPasswordSignInAsync(findUser, loginModel.Password,false);
+        if (!result.Succeeded)
+        {
+            message = "Invalid Username or Password";
+            return;
+        }
+
+        await signInManager.PasswordSignInAsync(findUser, loginModel.Password, false, false);
+        navigationManager.NavigateTo("/chatpage", true);
+    }
+    public class LoginModel
+    {
+        [Required,EmailAddress]
+        public string Email { get; set; } = string.Empty;
+
+        [Required]
+        public string Password { get; set; } = string.Empty;
+    }
+}

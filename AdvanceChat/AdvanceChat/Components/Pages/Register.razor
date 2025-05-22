@@ -1,0 +1,106 @@
+﻿@page "/register"
+@using System.ComponentModel.DataAnnotations
+@using AdvanceChat.Data
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<AppUser> userManger
+@inject SignInManager<AppUser> signInManager
+@inject NavigationManager navigationManager
+
+<div style="display:flex; align-items: center; justify-content:center; height:100vh ">
+    <div  class="shadow-sm"  style="height: auto; width:400px; background-color:#edf1f5; border-radius:15px">
+        <div style=" margin:1.5rem auto 0px auto ">
+            <div class="container-fluid" style="display: flex; justify-content:center">
+                <a class="navbar-brand" href="#" style="color:#193066; opacity:100%; font-weight: bold; font-size:1.65rem"><img src="/Assets/bluelogo.png"
+                        height="30px" width="24px" alt="Logo" loading="lazy" style="padding-right:5px; " />E-OREO</a>
+            </div>
+            <div style="display: flex; justify-content:center">
+                <p style="font-size: 9px; color: #757a7b; font-weight: bold;">Employee - Opportunity, Rewards, Engagement, Outcome </p>
+            </div>
+        </div>
+        <section style="margin:0px  50px  5px 50px">
+            <StatusMessage Message="@Message" />
+            <EditForm Model="registerModel" asp-route-returnUrl="@ReturnUrl" method="post" OnValidSubmit="RegisterAsync" FormName="register">
+            <DataAnnotationsValidator />
+          <!--  <ValidationSummary class="text-danger" role="alert" /> -->
+            <div class="form-floating mb-3">
+                    <InputText @bind-Value="registerModel.Email" style="height: 3rem;" class="form-control" autocomplete="username" aria-required="true" pattern=".+(ericsson|ERICSSON|Ericsson)\.(com|Com|COM)" title="Email must be end with &commat;ericsson.com " placeholder="name@ericsson.com" />
+                <label for="email" style="padding: 0.75rem 0.5rem;">Email</label>
+                    <ValidationMessage For="() => registerModel.Email" class="text-danger" />
+            </div>
+            <div class="form-floating mb-3">
+                    <InputText @bind-Value="registerModel.FullName" style="height: 3rem;" class="form-control" autocomplete="fullname" pattern="^\S.*$" title="Full Name must not consist of only spaces or not start with spaces" aria-required="true" placeholder="Your Full Name" />
+                <label for="fullname" style="padding: 0.75rem 0.5rem;">Full Name</label>
+                    <ValidationMessage For="() => registerModel.FullName" class="text-danger" />
+            </div>
+            
+            <div class="form-floating mb-3">
+                    <InputText type="password" style="height: 3rem;" @bind-Value="registerModel.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
+                <label for="password" style="padding: 0.75rem 0.5rem;">Password</label>
+                    <ValidationMessage For="() => registerModel.Password" class="text-danger" />
+            </div>
+            <div class="form-floating mb-3">
+                    <InputText type="password" style="height: 3rem;" @bind-Value="registerModel.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
+                <label for="confirm-password" style="padding: 0.75rem 0.5rem;" >Confirm Password</label>
+                    <ValidationMessage For="() => registerModel.ConfirmPassword" class="text-danger" />
+            </div>
+            <button type="submit"  class="w-100 btn btn-lg btn-primary mb-4" style="background-color:#193066" ;>Register</button>
+        </EditForm>
+        </section>
+    </div>
+</div>
+@code {
+     private IEnumerable<IdentityError>? identityErrors;
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    private string? Message => identityErrors is null ? null : $"Error: {string.Join(", ", identityErrors.Select(error => error.Description))}";
+
+    string message = "";
+
+    [SupplyParameterFromForm]
+    public RegisterModel registerModel { get; set; } = new();
+
+    public async Task RegisterAsync()
+    {
+        var appUser = new AppUser()
+            {
+                FullName = registerModel.FullName,
+                Email = registerModel.Email,
+                PasswordHash = registerModel.Password,
+                UserName = registerModel.Email
+            };
+
+        var result = await userManger.CreateAsync(appUser, registerModel.Password);
+        if (!result.Succeeded)
+        {
+            message = string.Join("\n", result.Errors.Select(e => e.Description));
+            return;
+        }
+        navigationManager.NavigateTo("/login", true);
+    }
+
+    public class RegisterModel
+    {
+        [Required]
+        [EmailAddress]
+        [Display(Name = "Email")]
+        public string Email { get; set; } = "";
+
+        [Required]
+        [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+        [DataType(DataType.Password)]
+        [Display(Name = "Password")]
+        public string Password { get; set; } = "";
+
+        [Required]
+        [DataType(DataType.Text)]
+        [Display(Name = "FullName")]
+        public string FullName { get; set; } = "";
+
+        [DataType(DataType.Password)]
+        [Display(Name = "Confirm password")]
+        [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
+        public string ConfirmPassword { get; set; } = "";
+    }
+}

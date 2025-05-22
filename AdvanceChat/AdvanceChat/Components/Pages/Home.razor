@@ -1,0 +1,33 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+
+@attribute [AllowAnonymous]
+
+<PageTitle>Home</PageTitle>
+
+@if (!_isAuthenticated)
+{
+    <p>Redirecting to login...</p>
+}
+
+@code {
+    private bool _isAuthenticated;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (!user.Identity?.IsAuthenticated ?? true)
+        {
+            NavigationManager.NavigateTo("/login", true);
+        }
+        else
+        {
+            _isAuthenticated = true;
+        }
+    }
+}
